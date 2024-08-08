@@ -17,8 +17,10 @@ import { Input } from "@/components/ui/input";
 import * as z from "zod";
 import Image from "next/image";
 import { Textarea } from "../ui/textarea";
-import {useUploadThing} from '@/lib/uploadthing'
+import { useUploadThing } from "@/lib/uploadthing";
 import { isBase64Image } from "@/lib/utils";
+import { updateUser } from "@/lib/actions/user.actions";
+import { usePathname, useRouter } from "next/navigation";
 
 interface Props {
   user: {
@@ -33,8 +35,10 @@ interface Props {
 }
 
 export default function AccountProfile({ user, btnTitle }: Props) {
-  const [files, setFiles] = useState<File[]>([])
-  const { startUpload } = useUploadThing("media")
+  const [files, setFiles] = useState<File[]>([]);
+  const { startUpload } = useUploadThing("media");
+  const router = useRouter();
+  const pathname = usePathname();
 
   const form = useForm({
     resolver: zodResolver(UserValidation),
@@ -52,37 +56,50 @@ export default function AccountProfile({ user, btnTitle }: Props) {
   ) => {
     e.preventDefault();
 
-    const fileReader = new FileReader()
+    const fileReader = new FileReader();
 
-    if(e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0]
-      setFiles(Array.from(e.target.files))
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setFiles(Array.from(e.target.files));
 
-      if(!file.type.includes('image')) return
+      if (!file.type.includes("image")) return;
 
       fileReader.onload = async (event) => {
-        const imageDataUrl = event.target?.result?.toString() || ''
+        const imageDataUrl = event.target?.result?.toString() || "";
 
-        fieldChange(imageDataUrl)
-      }
+        fieldChange(imageDataUrl);
+      };
 
-      fileReader.readAsDataURL(file)
+      fileReader.readAsDataURL(file);
     }
   };
 
   async function onSubmit(values: z.infer<typeof UserValidation>) {
-   const blob = values.profile_photo;
-   const hasImageChanged = isBase64Image(blob)
+    const blob = values.profile_photo;
+    const hasImageChanged = isBase64Image(blob);
 
-   if(hasImageChanged) {
-    const imgRes = await startUpload(files)
+    if (hasImageChanged) {
+      const imgRes = await startUpload(files);
 
-    if(imgRes && imgRes[0].url) {
-      values.profile_photo = imgRes[0].url
+      if (imgRes && imgRes[0].url) {
+        values.profile_photo = imgRes[0].url;
+      }
     }
-   }
 
-   //update user profile
+    await updateUser({
+      name: values.name,
+      path: pathname,
+      username: values.username,
+      userId: user.id,
+      bio: values.bio,
+      image: values.profile_photo,
+    });
+
+    if (pathname === "/profile/edit") {
+      router.back();
+    } else {
+      router.push("/");
+    }
   }
 
   return (
@@ -125,6 +142,7 @@ export default function AccountProfile({ user, btnTitle }: Props) {
                   onChange={(e) => handleImage(e, field.onChange)}
                 />
               </FormControl>
+              <FormControl />
             </FormItem>
           )}
         />
@@ -144,6 +162,7 @@ export default function AccountProfile({ user, btnTitle }: Props) {
                   {...field}
                 />
               </FormControl>
+              <FormControl />
             </FormItem>
           )}
         />
@@ -163,13 +182,14 @@ export default function AccountProfile({ user, btnTitle }: Props) {
                   {...field}
                 />
               </FormControl>
+              <FormControl />
             </FormItem>
           )}
         />
 
         <FormField
           control={form.control}
-          name="username"
+          name="bio"
           render={({ field }) => (
             <FormItem className="flex gap-3 w-full flex-col">
               <FormLabel className="text-base-semibold text-light-2">
@@ -182,6 +202,7 @@ export default function AccountProfile({ user, btnTitle }: Props) {
                   {...field}
                 />
               </FormControl>
+              <FormControl />
             </FormItem>
           )}
         />
