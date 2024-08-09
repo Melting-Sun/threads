@@ -45,7 +45,7 @@ export async function updateUser({
 }
 
 
-export async function fetchUSer(userId: string) {
+export async function fetchUser(userId: string) {
   try {
     await connectToDB()
     return await User

@@ -16,6 +16,7 @@ import { Textarea } from "../ui/textarea";
 import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 import { ThreadValidation } from "@/lib/validations/thread";
+import { creatThread } from "@/lib/actions/thread.actions";
 // import { updateUser } from "@/lib/actions/user.actions";
 
 interface Props {
@@ -42,15 +43,22 @@ export default function PostThread({ userId }: { userId: string }) {
     },
   });
 
-  const onSubmit = () => {
-    
+  const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
+    await creatThread({
+      text: values.thread, 
+      author: userId,
+      communityId: null,
+      path: pathname
+    })
+
+    router.push('/')
   }
 
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col justify-start gap-10"
+        className="mt-10 flex flex-col justify-start gap-10"
       >
         <FormField
           control={form.control}
@@ -70,6 +78,9 @@ export default function PostThread({ userId }: { userId: string }) {
             </FormItem>
           )}
         />
+        <Button type="submit" className="bg-primary-500">
+          Post Thread
+        </Button>
       </form>
     </Form>
   );
